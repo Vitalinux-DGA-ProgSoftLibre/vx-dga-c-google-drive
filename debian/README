@@ -46,10 +46,10 @@ apt-get install debhelper devscripts
 
 En caso de no querer crear el paquete para tu distribución, si simplemente quieres obtenerlo e instalarlo, puedes hacer uso del que está disponible para los servidores Caché Debian 8 del programa de Software Libre Vitalinux (*Debian 8*) desde el siguiente repositorio:
 
-[Respositorio de paquetes DEB de Vitalinux](http://migasfree.educa.aragon.es/repo/Debian8/STORES/base/)
+[Respositorio de paquetes DEB del Servidor Caché Debian 8 del programa Vitalinux](http://migasfree.educa.aragon.es/repo/Debian8/STORES/base/)
 
 # Como Instalar el paquete generado vx-dga-l-*.deb:
 Para la instalación de paquetes que estan en el equipo local puede hacerse uso de ***dpkg*** o de ***gdebi***, siendo este último el más aconsejado para que se instalen también las dependencias correspondientes.
 ```
-gdebi vx-dga-l-*.deb
+gdebi vx-dga-c-*.deb
 ```
