@@ -1,0 +1,5 @@
+vx-dga-c-google-drive (1.0-1) unstable; urgency=low
+
+  * Paquete pensado sincronizar con Google Drive basado en grive2
+
+ -- Arturo Martín Romero <amartinromero@gmail.com>  Tue, 20 Nov 2018 08:39:06 +0200

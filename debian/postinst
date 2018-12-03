@@ -1,0 +1,126 @@
+#!/bin/bash
+# postinst script for vx-dga-c-google-drive
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+function salir()
+{
+    echo "${1}"
+    exit 1
+}
+
+case "$1" in
+    configure)
+        DAEMON="/opt/grive/vx-grive2d"
+        [ -f "${DAEMON}" ] && chmod +x "${DAEMON}"
+
+        # Cargamos las variables de configuración del grive:
+        FICHCONFGRIVE="/etc/default/vx-variables-grive2"
+        # [ -f "${FICHCONFUSERGRIVE}" ] && . "${FICHCONFUSERGRIVE}"
+        CMD_GET="crudini --get ${FICHCONFGRIVE} Confgrive"
+        CMD_SET="crudini --set ${FICHCONFGRIVE} Confgrive"
+
+        # Usuarios a lo que se les configurará el Drive de grive2:
+        GRIVE2_USERS="$(${CMD_GET} grive2_users 2> /dev/null)"
+
+        # Comprobamos si ya se ha hecho el git-clone y su instalación de grive2:
+        GITGRIVE2INSTALL="$(${CMD_GET} git_grive2_install 2> /dev/null)"
+        if [[ -z "${GITGRIVE2INSTALL}" || "${GITGRIVE2INSTALL}" == 0 ]] ; then
+            DIRTMP="/usr/share/vitalinux/tmp"
+            ! [ -d "${DIRTMP}" ] && mkdir -p "${DIRTMP}"
+            cd "${DIRTMP}"
+            git clone https://github.com/vitalif/grive2
+            [ -d "grive2" ] && cd grive2 || salir "No se ha encontrado el directorio grive2 tras clonar git ..."
+            echo "Pasaremos a construir grive ..."
+            mkdir build && cd build
+            cmake ..
+            make -j4
+            make install
+            ${CMD_SET} "git_grive2_install" "1"
+        fi
+
+        # Configuramos el directorio destino de los documentos del Drive.  Por defecto, el directorio /var/nfs/privado/Drive del profesor:
+        # DIRBINDGRIVE="/var/nfs/privado/Drive"
+        DIRBINDGRIVE="$(${CMD_GET} grive2_default_dir 2> /dev/null)"
+
+        # Comprobamos la configuración del destino de los documentos sincronizados por grive:
+        GRIVE2DESTINO="$(${CMD_GET} grive2_destino 2> /dev/null)"
+        if [[ -z "${GRIVE2DESTINO}" || "${GRIVE2DESTINO}" == 0 ]] ; then
+            ! [ -d "${DIRBINDGRIVE}" ] && mkdir -p "${DIRBINDGRIVE}" && chown -R "${GRIVE2_USERS}" "${DIRBINDGRIVE}"
+            ${CMD_SET} "grive2_destino" "1"
+        fi
+
+        # Realizamos la primera sincronización con google Drive:
+        GRIVE2FIRSTSYNC="$(${CMD_GET} grive2_first_sync 2> /dev/null)"
+        if [[ -z "${GRIVE2FIRSTSYNC}" || "${GRIVE2FIRSTSYNC}" == 0 ]] ; then
+            # Sincronizamos con Google Drive:
+            cd "${DIRDRIVE}"
+            echo "Primera sincronización con Google Drive ..."
+            sudo -u "${GRIVE2_USERS}" grive -a
+            ${CMD_SET} "grive2_first_sync" "1"
+        fi
+
+        # Preparamos la sincronización de ficheros:
+        # 'Drive' is the name of your Google Drive folder in your $HOME directory
+        # Lo siguiente solo puede ejecutarse si el usuario tiene iniciada una sesión:
+        # Cada vez que un usuario inicia sesión en el equipo se le 
+        IDUSER="$(id -u "${GRIVE2_USERS}")"
+        if test -d "/run/user/${IDUSER}" && ( who | grep ^${IDUSER} &> /dev/null ) ; then
+            sudo -u "${GRIVE2_USERS}" systemctl --user enable grive-timer@Drive.timer
+            sudo -u "${GRIVE2_USERS}" systemctl --user start grive-timer@Drive.timer
+            sudo -u "${GRIVE2_USERS}" systemctl --user enable grive-changes@Drive.service
+            sudo -u "${GRIVE2_USERS}" systemctl --user start grive-changes@Drive.service
+        fi
+
+        echo "Starting grive2 ..."
+        for dbuser in ${GRIVE2_USERS} ; do
+            #HOMEDIR=`getent passwd $dbuser | cut -d: -f6`
+            if [ -x "${DAEMON}" ]; then
+                echo "Starting grive2 for $dbuser ..."
+                # Al ser un script en bash, en lugar de "-x" lo haremos con "-a":
+                # HOME="$HOMEDIR" start-stop-daemon -b -o -c $dbuser -S -u $dbuser -x $DAEMON -p $HOMEDIR/grive2.pid
+                # HOME="$HOMEDIR" start-stop-daemon -b -o -c $dbuser -S -u $dbuser -a $DAEMON --name vx-grive2 -p $HOMEDIR/vx-grive2.pid
+                # start-stop-daemon --start --quiet -m --name vx-grive2d --pidfile /run/vx-grive2d.pid -b -a ${DAEMON}
+                start-stop-daemon -b -o -c $dbuser -S -u $dbuser -a $DAEMON --name vx-grive2 --pidfile /run/vx-grive2d.pid
+                # Para ver el estado del demonio:
+                # start-stop-daemon --status --name vx-grive2
+            fi
+        done
+
+        if test -f "/etc/init.d/vx-grive2" ; then
+			if /usr/sbin/update-rc.d vx-grive2 defaults ; then
+				echo "=> Se ha confirado a Grive2 como un Servicio más al inicio ..."
+			fi
+        fi
+
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,13 @@
+Source: vx-dga-c-google-drive
+Section: utils
+Priority: extra
+Maintainer: Arturo Martín Romero <amartinromero@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.7
+Homepage: https://github.com/Vitalinux-DGA-ProgSoftLibre
+
+Package: vx-dga-c-google-drive
+Architecture: all
+Depends: ${misc:Depends}, git, inotify-tools, libpam-systemd, crudini, cmake,build-essential,linux-compiler-gcc-4.8-x86,libjson0-dev,libcurl4-openssl-dev,libexpat1-dev,libboost-filesystem-dev,libboost-program-options-dev,libyajl2,libcurl3,libcrypto++9,libboost-all-dev,libboost-iostreams1.55.0,libcppunit-1.13-0,binutils,binutils-dev,libyajl-dev,libgcrypt20,libgcrypt20-dev,pkg-config,zlib1g,zlib1g-dev
+Description: Google Drive sin entorno gráfico
+ Configuración de un cliente de Google Drive para SO Linux sin entorno gráfico

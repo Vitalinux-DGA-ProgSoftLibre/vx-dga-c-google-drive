@@ -1,0 +1,7 @@
+[Confgrive]
+# Parametros de Configuración general de instalación de grive2:
+grive2_users = profesor
+grive2_default_dir = /var/nfs/privado/Drive
+git_grive2_install = 0
+grive2_destino = 0
+grive2_first_sync = 0

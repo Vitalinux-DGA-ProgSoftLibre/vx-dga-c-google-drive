@@ -1,0 +1,87 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides: google-drive grive2
+# Required-Start: $local_fs $remote_fs $network $syslog $named
+# Required-Stop: $local_fs $remote_fs $network $syslog $named
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# X-Interactive: false
+# Short-Description: grive2 service
+### END INIT INFO
+
+FICHCONFGRIVE="/etc/default/vx-variables-grive2"
+# Usuarios a lo que se les configurará el Drive de grive2:
+[ -f "${FICHCONFGRIVE}" ] && \
+    CMD_GET="crudini --get ${FICHCONFGRIVE} Confgrive" && \
+    GRIVE2_USERS="$(${CMD_GET} grive2_users 2> /dev/null)"
+
+echo "Preparando grive2 para los usuarios $GRIVE2_USERS ..."
+mkdir -p /var/run/grive
+DAEMON="/opt/grive/vx-grive2d"
+
+start() {
+    echo "Starting grive2 ..."
+    for dbuser in ${GRIVE2_USERS} ; do
+        #HOMEDIR=`getent passwd $dbuser | cut -d: -f6`
+        if [ -x "${DAEMON}" ]; then
+            echo "Starting grive2 for $dbuser ..."
+            # Al ser un script en bash, en lugar de "-x" lo haremos con "-a":
+            # HOME="$HOMEDIR" start-stop-daemon -b -o -c $dbuser -S -u $dbuser -x $DAEMON -p $HOMEDIR/grive2.pid
+            # HOME="$HOMEDIR" start-stop-daemon -b -o -c $dbuser -S -u $dbuser -a $DAEMON --name vx-grive2 -p $HOMEDIR/vx-grive2.pid
+            # start-stop-daemon --start --quiet -m --name vx-grive2d --pidfile /run/vx-grive2d.pid -b -a ${DAEMON}
+            start-stop-daemon -b -o -c $dbuser -S -u $dbuser -a $DAEMON --name vx-grive2 --pidfile /run/vx-grive2d.pid
+            # Para ver el estado del demonio:
+            # start-stop-daemon --status --name vx-grive2
+        fi
+    done
+}
+
+stop() {
+    echo "Stopping dropbox..."
+    for dbuser in $GRIVE2_USERS; do
+        HOMEDIR=`getent passwd $dbuser | cut -d: -f6`
+        if [ -x $DAEMON ]; then
+            echo "Stopping Grive2 for $dbuser"
+            # /sbin/start-stop-daemon --oknodo --stop --name "vx-grive2" --retry=TERM/10/KILL/5
+            start-stop-daemon -o -c $dbuser -K -u $dbuser -p /run/vx-grive2d.pid
+        fi
+    done
+}
+
+status() {
+    for dbuser in $GRIVE2_USERS; do
+        dbpid=`pgrep -u $dbuser vx-grive2`
+        if [ -z $dbpid ] ; then
+            echo "Grive2 for USER $dbuser: not running."
+        else
+            echo "Grive2 for USER $dbuser: running (pid $dbpid)"
+        fi
+    done
+}
+
+case "$1" in
+
+    start)
+        start
+        ;;
+
+    stop)
+        stop
+        ;;
+
+    restart|reload|force-reload)
+        stop
+        start
+        ;;
+
+    status)
+        status
+        ;;
+
+    *)
+        echo "Usage: /etc/init.d/dropbox {start|stop|reload|force-reload|restart|status}"
+        exit 1
+
+esac
+
+exit 0

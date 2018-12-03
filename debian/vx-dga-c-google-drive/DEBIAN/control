@@ -1,0 +1,11 @@
+Package: vx-dga-c-google-drive
+Version: 1.0-1
+Architecture: all
+Maintainer: Arturo Martín Romero <amartinromero@gmail.com>
+Installed-Size: 29
+Depends: git, inotify-tools, libpam-systemd, crudini, cmake, build-essential, linux-compiler-gcc-4.8-x86, libjson0-dev, libcurl4-openssl-dev, libexpat1-dev, libboost-filesystem-dev, libboost-program-options-dev, libyajl2, libcurl3, libcrypto++9, libboost-all-dev, libboost-iostreams1.55.0, libcppunit-1.13-0, binutils, binutils-dev, libyajl-dev, libgcrypt20, libgcrypt20-dev, pkg-config, zlib1g, zlib1g-dev
+Section: utils
+Priority: extra
+Homepage: https://github.com/Vitalinux-DGA-ProgSoftLibre
+Description: Google Drive sin entorno gráfico
+ Configuración de un cliente de Google Drive para SO Linux sin entorno gráfico
